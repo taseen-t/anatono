@@ -12,6 +12,11 @@ import streamlit as st
 
 import anatono as A
 
+try:
+    from local_extras import fetch_youtube  # optional local add-on, not part of this repo
+except ImportError:
+    fetch_youtube = None
+
 st.set_page_config(page_title="Anatono", page_icon="🎤", layout="centered")
 st.title("🎤 Anatono")
 st.write("**Sing over any song, and Gemma 4 coaches your voice.** Upload a song, sing the part over the music, "
@@ -30,6 +35,8 @@ def fetch(url):
     if u.scheme not in ("http", "https") or not u.netloc:
         raise ValueError("Use an http(s) link to an audio file.")
     if any(h in u.netloc for h in ("youtube.com", "youtu.be")):
+        if fetch_youtube:
+            return fetch_youtube(url.strip(), MAX_MB)
         raise ValueError("YouTube links aren't supported. Use a direct link to an audio file you have the rights to.")
     ext = Path(u.path).suffix.lower()
     req = urllib.request.Request(url.strip(), headers={"User-Agent": "Anatono/1.0"})
@@ -62,7 +69,8 @@ song, path = None, None
 if pick == UPLOAD:
     song = st.file_uploader("Upload a song", type=[e[1:] for e in AUDIO_EXT])
 elif pick == LINK:
-    url = st.text_input("Direct link to an audio file (.mp3, .wav, .m4a, ...)",
+    url = st.text_input("Direct link to an audio file (.mp3, .wav, .m4a, ...)" +
+                        (" or a YouTube link" if fetch_youtube else ""),
                         placeholder="https://example.com/song.mp3")
     if url and st.session_state.get("url") != url:
         try:
