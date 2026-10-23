@@ -16,6 +16,7 @@ your take needs. Then you hear yourself over the beat, raw and auto-tuned.
 | **AI model** | **Gemma 4**, `gemma-4-26b-a4b-it` (open weights, 26B parameters, a *large* model by the challenge's definition), called **through the Gemini API**. Licence: [Apache 2.0](https://ai.google.dev/gemma/apache_2) |
 | **The line that calls Gemma** | [`anatono.py`, `coach()`](anatono.py#L147): `client.models.generate_content(model=MODEL, contents=[prompt, img])` with `MODEL = "gemma-4-26b-a4b-it"` |
 | **API key** | Bring your own: copy `.env.example` to `.env`. No key is in this repo (`.env` is git-ignored). |
+| **Agent skill** | [`skills/anatono-coach/`](skills/anatono-coach/SKILL.md), following the [Agent Skills open standard](https://agentskills.io/specification). Validated: `agentskills validate skills/anatono-coach` → `Valid skill` |
 | **Key dependencies** | See the table below, each with its licence |
 
 ## What we built, and what the AI does
@@ -47,6 +48,18 @@ grounded in real numbers and the model can't break the audio.
   chart, Gemma coach with output validation and retry, auto-tune, mixing, plus a self-check.
 - `app.py`: the one-screen web app (Streamlit).
 - `make_sample.py`: a copyright-free sample song, so anyone can try it.
+- `skills/anatono-coach/`: an **agent skill** (Agent Skills open standard), so Claude Code, Gemini CLI or any
+  skills-compatible agent can coach a take: `SKILL.md` tells the agent when and how, and `scripts/coach.py` runs the
+  pipeline and returns JSON plus the mixed audio.
+
+## Use it from an AI agent (agent skill)
+
+Copy `skills/anatono-coach/` into your agent's skills folder (e.g. `~/.claude/skills/`), keep this repo installed,
+and ask *"coach my singing on this song"*. Or run the script directly:
+
+```bash
+python3 skills/anatono-coach/scripts/coach.py --song songs/sample_song.wav --take my_take.wav --start 0 --dur 20
+```
 
 ## How to run
 
