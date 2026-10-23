@@ -1,0 +1,12 @@
+google-genai>=2.33
+python-dotenv>=1.2
+streamlit>=1.66
+demucs==4.1.0
+torch>=2.14
+librosa>=1.0
+pyworld==0.3.5
+setuptools<81
+soundfile>=0.14
+numpy>=2.4
+matplotlib>=3.11
+pillow

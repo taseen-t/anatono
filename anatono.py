@@ -188,6 +188,11 @@ def run(song, take, start=0.0, dur=25.0, log=print):
     log("Splitting the song into music and vocals (Demucs)...")
     music, vocals = separate(song, start, dur)
     log(f"The singer starts {singing_starts(vocals):.1f} s into the clip.")
+    return coach_take(music, vocals, take, dur, log)
+
+
+def coach_take(music, vocals, take, dur, log=print):
+    """Everything after separation: align, measure, Gemma coaches, auto-tune, mix."""
     log("Lining your take up with the song...")
     offset = align(take, vocals)
     log(f"Your recording starts at {offset:+.2f} s of the clip.")
