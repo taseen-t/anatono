@@ -1,6 +1,7 @@
 """Anatono web app: streamlit run app.py"""
 import io
 import tempfile
+from pathlib import Path
 
 import librosa
 import numpy as np
@@ -25,11 +26,18 @@ def wav_bytes(y):
 
 # 1. Song -> music + vocals
 st.header("1. Pick a song")
-song = st.file_uploader("Song file", type=["mp3", "wav", "m4a", "flac", "ogg"])
+SONGS = Path(__file__).with_name("songs")
+found = sorted(p.name for p in SONGS.glob("*") if p.suffix.lower() in {".mp3", ".wav", ".m4a", ".flac", ".ogg"})
+pick = st.selectbox("A song from the `songs/` folder", ["(upload one instead)"] + found,
+                    index=1 if found else 0, help="Run `python3 make_sample.py` to get copyright-free samples.")
+upload = pick.startswith("(")
+song = st.file_uploader("Upload a song", type=["mp3", "wav", "m4a", "flac", "ogg"]) if upload else None
+path = None if upload else str(SONGS / pick)
 if song:
     with tempfile.NamedTemporaryFile(suffix="." + song.name.rsplit(".", 1)[-1], delete=False) as f:
         f.write(song.getvalue())
         path = f.name
+if path:
     total = librosa.get_duration(path=path)
     c1, c2 = st.columns(2)
     start = c1.number_input("Start at (seconds)", 0.0, max(0.0, total - 10), 0.0, 1.0)

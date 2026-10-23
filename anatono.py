@@ -211,7 +211,7 @@ if __name__ == "__main__":
     # Self-check on a fake take with a known answer: the separated vocal, cut 0.7 s in and sung 40 cents flat.
     import sys
     import soundfile as sf
-    song = sys.argv[1] if len(sys.argv) > 1 else "songs/test_song.wav"
+    song = sys.argv[1] if len(sys.argv) > 1 else "songs/sample_song.wav"
     music, vocals = separate(song, 0, 25)
     take = librosa.effects.pitch_shift(vocals[int(0.7 * SR):], sr=SR, n_steps=-0.4)
     off = align(take, vocals)
