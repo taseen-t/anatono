@@ -69,7 +69,7 @@ cp .env.example .env        # then paste your Gemini API key (free at aistudio.g
 streamlit run app.py
 ```
 
-No song handy? `python3 make_sample.py` (macOS) makes two copyright-free songs in `songs/`. The app lists everything in `songs/`, so there is nothing to upload.
+No song handy? `python3 make_sample.py` (macOS) makes two copyright-free songs in `songs/`. The app lists everything in `songs/`, so there is nothing to upload. You can also upload a file, or paste a direct link to an audio file you have the rights to (http/https, audio only, up to 50 MB; YouTube links are refused).
 Self-check (uses a fake take with a known answer): `python3 anatono.py songs/sample_song.wav`
 
 **Use headphones** when you record, so the music doesn't leak into your take.

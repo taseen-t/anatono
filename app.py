@@ -1,6 +1,8 @@
 """Anatono web app: streamlit run app.py"""
 import io
 import tempfile
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 import librosa
@@ -18,6 +20,31 @@ st.caption(f"AI: `{A.MODEL}` (Gemma 4, open weights, Apache 2.0) through the Gem
            "Demucs for splitting the song · open source, MIT")
 
 
+AUDIO_EXT = (".mp3", ".wav", ".m4a", ".flac", ".ogg")
+MAX_MB = 50
+
+
+def fetch(url):
+    """Download a direct audio link to a temp file: http(s) only, audio only, at most MAX_MB."""
+    u = urllib.parse.urlparse(url.strip())
+    if u.scheme not in ("http", "https") or not u.netloc:
+        raise ValueError("Use an http(s) link to an audio file.")
+    if any(h in u.netloc for h in ("youtube.com", "youtu.be")):
+        raise ValueError("YouTube links aren't supported. Use a direct link to an audio file you have the rights to.")
+    ext = Path(u.path).suffix.lower()
+    req = urllib.request.Request(url.strip(), headers={"User-Agent": "Anatono/1.0"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        ctype = r.headers.get("Content-Type", "")
+        if not (ctype.startswith("audio/") or ext in AUDIO_EXT):
+            raise ValueError(f"That link isn't an audio file (it's {ctype or 'unknown'}).")
+        data = r.read(MAX_MB * 2**20 + 1)
+    if len(data) > MAX_MB * 2**20:
+        raise ValueError(f"That file is over {MAX_MB} MB.")
+    with tempfile.NamedTemporaryFile(suffix=ext if ext in AUDIO_EXT else ".mp3", delete=False) as f:
+        f.write(data)
+    return f.name
+
+
 def wav_bytes(y):
     buf = io.BytesIO()
     sf.write(buf, y, A.SR, format="WAV")
@@ -27,12 +54,27 @@ def wav_bytes(y):
 # 1. Song -> music + vocals
 st.header("1. Pick a song")
 SONGS = Path(__file__).with_name("songs")
-found = sorted(p.name for p in SONGS.glob("*") if p.suffix.lower() in {".mp3", ".wav", ".m4a", ".flac", ".ogg"})
-pick = st.selectbox("A song from the `songs/` folder", ["(upload one instead)"] + found,
-                    index=1 if found else 0, help="Run `python3 make_sample.py` to get copyright-free samples.")
-upload = pick.startswith("(")
-song = st.file_uploader("Upload a song", type=["mp3", "wav", "m4a", "flac", "ogg"]) if upload else None
-path = None if upload else str(SONGS / pick)
+found = sorted(p.name for p in SONGS.glob("*") if p.suffix.lower() in AUDIO_EXT)
+UPLOAD, LINK = "(upload a file)", "(paste a direct audio link)"
+pick = st.selectbox("Song", found + [UPLOAD, LINK],
+                    help="Songs in the `songs/` folder are listed first. `python3 make_sample.py` makes free samples.")
+song, path = None, None
+if pick == UPLOAD:
+    song = st.file_uploader("Upload a song", type=[e[1:] for e in AUDIO_EXT])
+elif pick == LINK:
+    url = st.text_input("Direct link to an audio file (.mp3, .wav, .m4a, ...)",
+                        placeholder="https://example.com/song.mp3")
+    if url and st.session_state.get("url") != url:
+        try:
+            with st.spinner("Downloading..."):
+                st.session_state.url_path = fetch(url)
+            st.session_state.url = url
+        except Exception as e:  # noqa: BLE001 - show why the link was refused
+            st.error(str(e))
+    if url and st.session_state.get("url") == url:
+        path = st.session_state.url_path
+else:
+    path = str(SONGS / pick)
 if song:
     with tempfile.NamedTemporaryFile(suffix="." + song.name.rsplit(".", 1)[-1], delete=False) as f:
         f.write(song.getvalue())
